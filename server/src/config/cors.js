@@ -8,8 +8,15 @@ export const corsOptions = {
       return;
     }
 
-    // Check if origin is in allowed list
-    if (env.clientUrls.includes(origin)) {
+    // Normalize the incoming origin (remove trailing slash)
+    const normalizedOrigin = origin.replace(/\/$/, '');
+    
+    // Check if origin is in allowed list (also normalize stored URLs)
+    const isAllowed = env.clientUrls.some(url => 
+      url.replace(/\/$/, '') === normalizedOrigin
+    );
+
+    if (isAllowed) {
       callback(null, true);
       return;
     }
