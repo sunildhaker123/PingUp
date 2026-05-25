@@ -2,11 +2,21 @@ import { env } from './env.js';
 
 export const corsOptions = {
   origin(origin, callback) {
-    if (!origin || env.clientUrls.includes(origin)) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
       callback(null, true);
       return;
     }
 
+    // Check if origin is in allowed list
+    if (env.clientUrls.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    // For debugging - log rejected origins
+    console.error(`[CORS] Rejected origin: ${origin}`);
+    console.error(`[CORS] Allowed origins: ${env.clientUrls.join(', ')}`);
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
