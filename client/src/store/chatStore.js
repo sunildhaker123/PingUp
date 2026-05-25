@@ -18,6 +18,7 @@ export const useChatStore = create((set) => ({
   typingUsersByConversation: {},
   isLoadingConversations: false,
   isSearchingUsers: false,
+  isLoadingMessages: false,
   error: null,
 
   fetchConversations: async () => {
@@ -92,17 +93,28 @@ export const useChatStore = create((set) => ({
   fetchMessages: async (conversationId) => {
     if (!conversationId) return;
 
-    const { data } = await api.get(`/messages/${conversationId}`);
+    set({ isLoadingMessages: true, error: null });
 
-    set((state) => ({
-      messagesByConversation: {
-        ...state.messagesByConversation,
-        [conversationId]: data.data.messages.map((message) => ({
-          ...message,
-          createdAt: formatTime(message.createdAt),
-        })),
-      },
-    }));
+    try {
+      const { data } = await api.get(`/messages/${conversationId}`);
+
+      set((state) => ({
+        messagesByConversation: {
+          ...state.messagesByConversation,
+          [conversationId]: data.data.messages.map((message) => ({
+            ...message,
+            createdAt: formatTime(message.createdAt),
+          })),
+        },
+        isLoadingMessages: false,
+      }));
+    } catch (error) {
+      console.error('Failed to fetch messages:', error);
+      set({
+        error: error.response?.data?.message || 'Unable to load messages',
+        isLoadingMessages: false,
+      });
+    }
   },
 
   setActiveConversation: (conversationId) => {

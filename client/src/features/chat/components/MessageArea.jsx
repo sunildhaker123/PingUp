@@ -11,7 +11,9 @@ export function MessageArea() {
   const activeConversationId = useChatStore((state) => state.activeConversationId);
   const messagesByConversation = useChatStore((state) => state.messagesByConversation);
   const typingUsersByConversation = useChatStore((state) => state.typingUsersByConversation);
+  const isLoadingMessages = useChatStore((state) => state.isLoadingMessages);
   const fetchMessages = useChatStore((state) => state.fetchMessages);
+  const isConnected = useSocketStore((state) => state.isConnected);
   const emit = useSocketStore((state) => state.emit);
 
   const activeConversation = useMemo(
@@ -23,13 +25,13 @@ export function MessageArea() {
   const typingUsers = typingUsersByConversation[activeConversationId] || [];
 
   useEffect(() => {
-    if (!activeConversationId) return undefined;
+    if (!activeConversationId || !isConnected) return undefined;
 
     fetchMessages(activeConversationId);
     emit(SOCKET_EVENTS.ROOM_JOIN, { conversationId: activeConversationId });
 
     return () => emit(SOCKET_EVENTS.ROOM_LEAVE, { conversationId: activeConversationId });
-  }, [activeConversationId, emit, fetchMessages]);
+  }, [activeConversationId, isConnected, emit, fetchMessages]);
 
   if (!activeConversation) {
     return (
@@ -61,9 +63,17 @@ export function MessageArea() {
         </div>
       </div>
 
-      <MessageList messages={messages} />
-      <TypingIndicator users={typingUsers} />
-      <MessageInput conversationId={activeConversationId} />
+      {isLoadingMessages ? (
+        <div className="flex flex-1 items-center justify-center">
+          <p className="text-sm text-slate-500">Loading messages...</p>
+        </div>
+      ) : (
+        <>
+          <MessageList messages={messages} />
+          <TypingIndicator users={typingUsers} />
+          <MessageInput conversationId={activeConversationId} />
+        </>
+      )}
     </main>
   );
 }
